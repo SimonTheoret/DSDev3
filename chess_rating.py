@@ -13,21 +13,27 @@ import xml.etree.ElementTree as ET
 # TODO - complétez cette méthode
 def parse_xml(path: str) -> pd.DataFrame:
     """
-    Parsez le fichier XML obtenu à partir de la base de données du lecteur FIDE qui peut être trouvé ici :
+    Parsez le fichier XML obtenu à partir de la base de données du lecteur FIDE
+    qui peut être trouvé ici :
 
         http://ratings.fide.com/download.phtml?period=2022-10-01
 
-    Notez que les scores sont mises à jour assez régulièrement, nous utilisons donc l'horodatage fixe de
-    06 Oct 2022, qui vous est fourni dans le répertoire de données. Vous ne devriez pas avoir besoin de télécharger quoi que ce soit
+    Notez que les scores sont mises à jour assez régulièrement, nous utilisons
+    donc l'horodatage fixe de 06 Oct 2022, qui vous est fourni dans le
+    répertoire de données. Vous ne devriez pas avoir besoin de télécharger quoi
+    que ce soit
 
     Arguments:
-        path (str) : chemin d'accès au fichier .xml souhaité ; s'il n'existe pas, cherche automatiquement pour le fichier .zip correspondant à extraire
+        path (str) : chemin d'accès au fichier .xml souhaité ; s'il n'existe
+        pas, cherche automatiquement pour le fichier .zip correspondant à
+        extraire
 
     Retour:
-        pd.DataFrame : DataFrame contenant les données brutes du fichier xml, avec les colonnes :
-            ["nom", "classement", "sexe", "anniversaire", "pays", "drapeau", "titre"]
+        pd.DataFrame : DataFrame contenant les données brutes du fichier xml,
+            avec les colonnes : ["nom", "classement", "sexe", "anniversaire",
+            "pays", "drapeau", "titre"]
     """
-    path = Path(path)
+    path: Path = Path(path)
 
     # unzip xml data if unavailable
     if not path.is_file():
@@ -36,21 +42,42 @@ def parse_xml(path: str) -> pd.DataFrame:
         else:
             raise FileNotFoundError("%s nor an archive exists." % path)
 
-    # define function to extract value, define tags to extract 
+    # define function to extract value, define tags to extract
     _get_val = lambda entry, tag: entry.find(tag).text
-    TARGET_ATTRIBUTES = ["name", "rating", "sex", "birthday", "country", "flag", "title"]
+    TARGET_ATTRIBUTES = [
+        "name",
+        "rating",
+        "sex",
+        "birthday",
+        "country",
+        "flag",
+        "title",
+    ]
 
     # ----------  NE MODIFIEZ PAS LA FONCTION AU-DESSUS DE CETTE LIGNE ---------- #
 
-    # TODO: 
+    # TODO:
     # Arbre d'élément XML (utilisez xml.etree.ElementTree)
+    tree = ET.parse(path)
+    root = tree.getroot()
+    players_list = []
+    for player in root:
+        player_data = {}
+        for target in TARGET_ATTRIBUTES:
+            value = _get_val(entry = player, tag = target)
+            player_data[target]= value
+        players_list.append(player_data)
 
-    # TODO: itérez sur le root node, pour obtenir les valeurs désirées pour les étiquettes désirées
-    # Assurez-vous de chargez toutes les valeurs de TARGET_ATTRIBUTES (utilisez le même nom de colonne dans le dataframe comme nom d'étiquette!). Vous pouvez utilisez la méthode _get_val(person, tag) fournie définie en haut pour obtenir l'étiquette correspondante
-   
+    print(players_list[0])
+
+    # TODO: itérez sur le root node, pour obtenir les valeurs désirées pour les
+    # étiquettes désirées. Assurez-vous de chargez toutes les valeurs de
+    # TARGET_ATTRIBUTES (utilisez le même nom de colonne dans le dataframe comme
+    # nom d'étiquette!). Vous pouvez utilisez la méthode _get_val(person, tag)
+    # fournie définie en haut pour obtenir l'étiquette correspondante
+
     # TODO: Convertir en dataframe
-
-    return None
+    return pd.DataFrame(players_list)
 
 
 # TODO - complétez cette méthode
@@ -58,32 +85,37 @@ def clean_data(df: pd.DataFrame, year_cutoff: int) -> pd.DataFrame:
     """
 
     Arguments :
-        df (pd.DataFrame) : la trame de données brute renvoyée par la méthode parse_xml()
-        year_cutoff (entier) : supprimer les joueurs dont les anniversaires sont SUPÉRIEURS À (>) cette valeur; c'est-à-dire seulement
-            inclure les joueurs nés jusqu'à (et y compris) cette année
+        df (pd.DataFrame) : la trame de données brute renvoyée par la méthode
+        parse_xml() year_cutoff (entier) : supprimer les joueurs dont les
+        anniversaires sont SUPÉRIEURS À (>) cette valeur; c'est-à-dire seulement
+        inclure les joueurs nés jusqu'à (et y compris) cette année
 
     Retour:
         pd.DataFrame : Dataframe nettoyé
     """
     # TODO: Enlever données sans information de date de naissance
-
+    df = df[df["birthday"].map(lambda x: x != None)]
     # TODO: Convertissez les types numériques en entiers
-    
-    # TODO: Gardez juste les joueurs avec une date de naissance jusqu'à year_cutoff (inclusivement)
-
-    return None
+    df["birthday"] = df["birthday"].apply(lambda birthday: int(birthday))
+    df["rating"] = df["rating"].apply(lambda rating: int(rating))
+    # TODO: Gardez juste les joueurs avec une date de naissance jusqu'à
+    # year_cutoff (inclusivement)
+    df = df[df['birthday'] <= year_cutoff ]
+    return df
 
 
 # TODO - complétez cette méthode
 def bin_counts(df: pd.DataFrame, bins: list, bin_centers: list) -> pd.DataFrame:
-    """ Renvoie un DataFrame avec les `ratings` regroupés entre les valeurs données dans `bins`, et
-    avec une étiquette donnée par `bin_centers`. En plus du nombre brut, ajoutez également une colonne normalisée nommée "count_norm" obtenu en divisant les comptes par la somme des comptes.
+    """Renvoie un DataFrame avec les `ratings` regroupés entre les valeurs
+    données dans `bins`, et avec une étiquette donnée par `bin_centers`. En plus
+    du nombre brut, ajoutez également une colonne normalisée nommée "count_norm"
+    obtenu en divisant les comptes par la somme des comptes.
 
     Ex : Donné
         >> x = pd.DataFrame({'rating' : [1, 2, 4, 6, 6, 7, 8, 11]})
         >> bacs = [0, 5, 10, 15]
         >> bin_centers = [2.5, 7.5, 12.5]
-    
+
     bin_counts(x, bins, bin_centers) doit renvoyer :
         >>      rating  count  count_norm
         >>  0    7.5      4       0.500
@@ -92,16 +124,20 @@ def bin_counts(df: pd.DataFrame, bins: list, bin_centers: list) -> pd.DataFrame:
 
     Arguments :
         df (pd.DataFrame): Dataframe nettoyé avec au moins la colonne 'rating'
-        bacs (liste) : définit les bords des bacs ; c'est-à-dire que [0, 5, 10] définit deux classes : [0, 5) et [5, 10]
-        bin_centers (liste) : Définit les étiquettes qui seront utilisées ; c'est-à-dire [2,5, 7,5] pour ce qui précède
+        bacs (liste) : définit les bords des bacs ; c'est-à-dire que [0, 5, 10]
+        définit deux classes : [0, 5) et [5, 10]
+        bin_centers (liste) : Définit les étiquettes qui seront utilisées ;
+        c'est-à-dire [2,5, 7,5] pour ce qui précède
         va mettre les valeurs comme [0, 5) -> 2.5, et [5, 10) -> 7.5.
 
     Retour:
         pd.DataFrame : dataframe avec des valeurs groupées ; doit avoir les colonnes
             ['rating', 'count', 'count_norm']. Renommez-les si nécessaire.
     """
-    if 'rating' not in df.keys():
-        raise ValueError("Incorrect input format; 'rating' must be a column in the input dataframe")
+    if "rating" not in df.keys():
+        raise ValueError(
+            "Incorrect input format; 'rating' must be a column in the input dataframe"
+        )
 
     # TODO: Astuce - utilisez pd.cut, et assurez-vous d'utiliser reset_index() quand utile
     hist = None
@@ -116,24 +152,24 @@ def bin_counts(df: pd.DataFrame, bins: list, bin_centers: list) -> pd.DataFrame:
 
 class PermutationTest:
     def __init__(self, df: pd.DataFrame, n_overrep: int, n_underrep: int):
-        """ Implémente l'expérience de test de permutation.
+        """Implémente l'expérience de test de permutation.
 
-         Arguments :
-             df (pd.DataFrame) : trame de données complète à partitionner (c'est-à-dire inclut les deux groupes)
-             n_overrep (entier) : nombre d'éléments dans le groupe surreprésenté
-             n_underrep (entier) : nombre d'éléments dans le groupe sous-représenté
-        
-         n_overrep + n_underrep devrait être == len(df) ! Techniquement < len(df) est correct aussi...
-         """
+        Arguments :
+            df (pd.DataFrame) : trame de données complète à partitionner (c'est-à-dire inclut les deux groupes)
+            n_overrep (entier) : nombre d'éléments dans le groupe surreprésenté
+            n_underrep (entier) : nombre d'éléments dans le groupe sous-représenté
+
+        n_overrep + n_underrep devrait être == len(df) ! Techniquement < len(df) est correct aussi...
+        """
         if len(df) < n_overrep + n_underrep:
             raise ValueError(f"Sum of n_overrep + n_underrep must be <= len(df)")
         self.df = df
         self.n_overrep = n_overrep
         self.n_underrep = n_underrep
-    
+
     # TODO - complétez cette méthode
     def job(self, seed: int = None) -> Tuple[int, int]:
-        """ Échantillonne deux groupes de taille n_overrep, n_underrep et renvoie la note maximale pour chacun des
+        """Échantillonne deux groupes de taille n_overrep, n_underrep et renvoie la note maximale pour chacun des
         groupe dans cet ordre (overrep, underrep)
 
         Arguments :
@@ -141,21 +177,20 @@ class PermutationTest:
 
         Retour:
             Tuple[int, int] : les notes maximales pour chacun des deux groupes, dans l'ordre (max(surreprésentation), max(sous-représentation))
-         """
+        """
         if seed is not None:
             np.random.seed(seed)
-            
 
         # TODO : échantillonnez deux groupes de taille n_overrep, n_underrep et renvoyez la note maximale pour chacun
         # des groupe dans l'ordre (overrep, underrep)
-        
+
         # Astuce : pensez à utiliser np.random.permutation sur un choix approprié de tableau
-        return 
+        return
 
 
 # TODO - complétez cette méthode
 def sample_two_groups(
-    df: pd.DataFrame, n_overrep: int, n_underrep: int, n_iter: int=1000
+    df: pd.DataFrame, n_overrep: int, n_underrep: int, n_iter: int = 1000
 ) -> Tuple[np.array, np.array]:
     """Exécutez des tests de permutation n_iter sur df, divisé en deux groupes (échantillonnés SANS remplacement) de
     taille n_overrep et n_underrep. Renvoyez deux tableaux numpy de longueur n_iter, ou les éléments correspondent à la
@@ -181,4 +216,8 @@ def sample_two_groups(
 
     return np.array(best_over), np.array(best_under)
 
+# def main():
+#     parse_xml("./data/standard_oct22frl_xml.zip")
 
+# if __name__ == "__main__":
+#     main()

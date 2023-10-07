@@ -162,7 +162,6 @@ def central_limit_theorem(df: pd.DataFrame) -> pd.DataFrame:
     df['iso'] = df['date'].map(date.isocalendar)
     df['year/week'] = df['iso'].map(lambda x: (x[0], x[1]))
     df = pd.DataFrame(df.groupby(['year/week', 'is_weekend'])['comment_count'].mean())
-    print(df)
 
     clt: pd.DataFrame = df
     return clt
@@ -170,16 +169,20 @@ def central_limit_theorem(df: pd.DataFrame) -> pd.DataFrame:
 
 # TODO - Complétez cette méthode
 def mann_whitney_u_test(wd: pd.DataFrame, we: pd.DataFrame) -> float:
-    """Exécutez le test U de Mann-Whitney entre les données du jour de la semaine et celles du week-end.
+    """Exécutez le test U de Mann-Whitney entre les données du jour de la
+    semaine et celles du week-end.
 
-    Le test U de Mann-Whitney est un test non paramétrique qui peut être utilisé pour décider que des échantillons d'un groupe sont plus grand/plus petits que les observations d'un autre group. Il suppose que les deux groupes ont:
+    Le test U de Mann-Whitney est un test non paramétrique qui peut être utilisé
+    pour décider que des échantillons d'un groupe sont plus grand/plus petits
+    que les observations d'un autre group. Il suppose que les deux groupes ont:
         - Des observations indépendantes
         - Les valeurs sont ordinales (peuvent être triées)
 
     Rappelons que l'hypothèse alternative pour un test de 2 côtés stipule:
-        Supposons que F(u) et G(u) sont les fonctions de distribution cumulées des distributions
-        qui ont donnés x et y, respectivement. Alors l'hypothèse alternative est que les distributions
-        ne sont pas égaux, c'est-à-dire F(u) ≠ G(u) pour au moins un u.
+        Supposons que F(u) et G(u) sont les fonctions de distribution cumulées
+        des distributions qui ont donnés x et y, respectivement. Alors
+        l'hypothèse alternative est que les distributions ne sont pas égaux,
+        c'est-à-dire F(u) ≠ G(u) pour au moins un u.
 
     Arguments :
         wd (pd.DataFrame): données en semaine
@@ -190,7 +193,7 @@ def mann_whitney_u_test(wd: pd.DataFrame, we: pd.DataFrame) -> float:
     """
     # TODO
 
-    p_utest: float = None
+    p_utest: float = sp.mannwhitneyu(wd['comment_count'], we['comment_count']).pvalue
     return p_utest
 
 

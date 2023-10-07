@@ -7,6 +7,7 @@ import pandas as pd
 import scipy.stats as sp
 import sys
 import datetime
+from datetime import date
 
 sns.set()
 
@@ -77,11 +78,10 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()  # copy pour que vous ne modifiez pas le dataframe original
     df = df[df["subreddit"] == "canada"]
     df["is_weekend"] = df["date"].map(is_weekend)
-    df = df[ df['date'] < np.datetime64('2014-01-01')]
+    df = df[ df['date'] <= np.datetime64('2013-12-31')]
     df = df[ df['date'] >= np.datetime64('2012-01-01')]
     df = df[df["date"] != False]
     # TODO: Filtrez sur years, subreddit, et ajoutez une colonne boolean 'is_weekend'
-    print(df)
     return df
 
 
@@ -135,16 +135,20 @@ def tests(
 
 # TODO - Complétez cette méthode
 def central_limit_theorem(df: pd.DataFrame) -> pd.DataFrame:
-    """Combinez tous les jours de semaine et de week-end de chaque paire année/semaine et prenez la moyenne de leur
-    count (non transformé).
+    """Combinez tous les jours de semaine et de week-end de chaque paire
+    année/semaine et prenez la moyenne de leur count (non transformé).
 
-    Conseils: Vous pouvez obtenir une "année" et un "numéro de semaine" à partir des deux premières valeurs renvoyées
-    par date.isocalendar(). Cette année et ce numéro de semaine vous donneront un identifiant pour la paire (année, semaine).
-    Utilisez Pandas pour regrouper par cette valeur et agréger en prenant la moyenne.
+    Conseils: Vous pouvez obtenir une "année" et un "numéro de semaine" à partir
+    des deux premières valeurs renvoyées par date.isocalendar(). Cette année et
+    ce numéro de semaine vous donneront un identifiant pour la paire (année,
+    semaine).  Utilisez Pandas pour regrouper par cette valeur et agréger en
+    prenant la moyenne.
 
-    Remarque: l'année renvoyée par isocalendar n'est pas toujours la même que l'année de la date (autour du nouveau
-    an). Utilisez l'année de l'isocalendar qui est correcte dans ce cas. Ceci est différent de la
-    l'année que vous avez utilisée pour filtrer les événements; n'effectuez aucun filtrage supplémentaire!
+    Remarque: l'année renvoyée par isocalendar n'est pas toujours la même que
+    l'année de la date (autour du nouveau an). Utilisez l'année de l'isocalendar
+    qui est correcte dans ce cas. Ceci est différent de la l'année que vous avez
+    utilisée pour filtrer les événements; n'effectuez aucun filtrage
+    supplémentaire!
 
     Arguments :
         df (pd.DataFrame) : dataframe nettoyé contenant (au minimum) les colonnes: 'date', 'comment_count', 'is_weekend'
@@ -155,8 +159,12 @@ def central_limit_theorem(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     # TODO: Combinez tous les jours de semaine et de week-end de chaque paire année/semaine et prenez la moyenne de leur compte (non transformé).
+    df['iso'] = df['date'].map(date.isocalendar)
+    df['year/week'] = df['iso'].map(lambda x: (x[0], x[1]))
+    df = pd.DataFrame(df.groupby(['year/week', 'is_weekend'])['comment_count'].mean())
+    print(df)
 
-    clt: pd.DataFrame = None
+    clt: pd.DataFrame = df
     return clt
 
 
